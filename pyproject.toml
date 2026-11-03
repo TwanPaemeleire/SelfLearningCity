@@ -1,0 +1,17 @@
+[project]
+name = "selflearningcity"
+version = "0.1.0"
+description = "2D cars that learn to drive through neuroevolution."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["Scripts"]
+testpaths = ["Scripts/tests"]
+
+[tool.ruff]
+line-length = 100
+src = ["Scripts"]
+
+[tool.ruff.lint]
+# E/F: errors and undefined names, I: import sorting, B: common bugs, UP: modern Python syntax
+select = ["E", "F", "I", "B", "UP"]
