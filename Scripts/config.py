@@ -1,1 +1,6 @@
-"""All tunable numbers in one place (physics, sensors, evolution, window)."""
+# Window
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+FPS = 60
+BACKGROUND_COLOR = (0, 0, 0)
+WINDOW_TITLE = "Self Learning City"
