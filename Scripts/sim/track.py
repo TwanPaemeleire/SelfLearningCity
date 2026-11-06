@@ -70,9 +70,7 @@ class Track:
         start_pos = Vec2(data["start_pos"]["x"], data["start_pos"]["y"])
         start_angle = data["start_angle"]
 
-        return Track(
-            walls=walls, checkpoints=checkpoints, start_pos=start_pos, start_angle=start_angle
-        )
+        return Track(walls=walls, checkpoints=checkpoints, start_pos=start_pos, start_angle=start_angle)
 
     def save(self, path: Path) -> None:
         """Save a Track object to a JSON file.
