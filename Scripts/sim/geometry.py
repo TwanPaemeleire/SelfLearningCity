@@ -53,6 +53,9 @@ class Segment:
     start: Vec2
     end: Vec2
 
+    def midpoint(self) -> Vec2:
+        return (self.start + self.end) * 0.5
+
     def segment_intersection(self, other: "Segment") -> Vec2 | None:
         """Return the point where this segment crosses another, if any.
 

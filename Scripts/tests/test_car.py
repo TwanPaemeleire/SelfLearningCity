@@ -258,3 +258,68 @@ def test_car_at_oval_start_is_alive():
     car = Car(track.start_pos, track.start_angle)
     car.check_collision(track.walls)
     assert car.alive
+
+
+# --- Sensors ---
+# Readings are distance / CAR_SENSOR_LENGTH: 0 = wall touching, 1 = nothing in range.
+# The first ray points 90 degrees to the car's left, the last 90 degrees to its right.
+
+SENSOR_LEN = config.CAR_SENSOR_LENGTH
+MIDDLE = config.CAR_SENSOR_COUNT // 2  # straight ahead (needs an odd ray count)
+
+
+def test_one_reading_per_sensor():
+    assert len(make_car().sensor_readings([])) == config.CAR_SENSOR_COUNT
+
+
+def test_no_walls_reads_all_ones():
+    assert make_car().sensor_readings([]) == [1.0] * config.CAR_SENSOR_COUNT
+
+
+def test_middle_ray_sees_wall_ahead():
+    d = SENSOR_LEN / 2
+    car = make_car()  # at (100, 100), facing right
+    readings = car.sensor_readings([wall(100 + d, -1000, 100 + d, 1000)])
+    assert readings[MIDDLE] == pytest.approx(0.5)
+
+
+def test_middle_ray_sees_wall_ahead_when_rotated():
+    d = SENSOR_LEN / 4
+    car = make_car(angle=math.pi / 2)  # facing down
+    readings = car.sensor_readings([wall(-1000, 100 + d, 1000, 100 + d)])
+    assert readings[MIDDLE] == pytest.approx(0.25)
+
+
+def test_wall_beyond_sensor_length_reads_one():
+    x = 100 + SENSOR_LEN * 2
+    readings = make_car().sensor_readings([wall(x, -1000, x, 1000)])
+    assert readings[MIDDLE] == pytest.approx(1.0)
+
+
+def test_first_ray_looks_left():
+    # Facing right, the car's left is up the screen (smaller y).
+    d = SENSOR_LEN / 2
+    readings = make_car().sensor_readings([wall(-1000, 100 - d, 1000, 100 - d)])
+    assert readings[0] == pytest.approx(0.5)
+    assert readings[-1] == pytest.approx(1.0)
+
+
+def test_last_ray_looks_right():
+    d = SENSOR_LEN / 2
+    readings = make_car().sensor_readings([wall(-1000, 100 + d, 1000, 100 + d)])
+    assert readings[-1] == pytest.approx(0.5)
+    assert readings[0] == pytest.approx(1.0)
+
+
+def test_readings_are_mirrored_in_a_straight_corridor():
+    d = SENSOR_LEN / 2
+    corridor = [wall(-1000, 100 - d, 1000, 100 - d), wall(-1000, 100 + d, 1000, 100 + d)]
+    readings = make_car().sensor_readings(corridor)
+    assert readings == pytest.approx(readings[::-1])
+
+
+def test_readings_stay_between_zero_and_one_on_the_oval():
+    track = Track.load(config.DATA_DIR / "tracks" / "oval.json")
+    car = Car(track.start_pos, track.start_angle)
+    for reading in car.sensor_readings(track.walls):
+        assert 0.0 <= reading <= 1.0
