@@ -2,7 +2,7 @@ import math
 from dataclasses import dataclass
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class Vec2:
     """A 2D point or direction.
 
@@ -27,6 +27,9 @@ class Vec2:
     def __mul__(self, scalar: float) -> "Vec2":
         return Vec2(self.x * scalar, self.y * scalar)
 
+    def __truediv__(self, scalar: float) -> "Vec2":
+        return Vec2(self.x / scalar, self.y / scalar)
+
     def __rmul__(self, scalar: float) -> "Vec2":
         return self.__mul__(scalar)
 
@@ -43,7 +46,7 @@ class Vec2:
         return self.x * other.y - self.y * other.x
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class Segment:
     """A straight line between two points, such as a wall, a checkpoint or a ray."""
 
@@ -57,8 +60,7 @@ class Segment:
             other: The segment to test against.
 
         Returns:
-            The intersection point, or None if the segments don't touch. Parallel
-            and collinear segments also return None.
+            The intersection point, or None if the segments don't touch, are parallel, or collinear.
         """
         p = self.start
         r = self.end - self.start
@@ -91,8 +93,7 @@ def raycast(origin: Vec2, angle: float, max_length: float, walls: list[Segment])
         walls: The walls the ray can hit.
 
     Returns:
-        The distance to the closest hit, or max_length if nothing is hit
-        within reach.
+        The distance to the closest hit, or max_length if nothing is hit within reach.
     """
     ray_segment = Segment(origin, origin + Vec2.from_angle(angle) * max_length)
     closest_distance = max_length
