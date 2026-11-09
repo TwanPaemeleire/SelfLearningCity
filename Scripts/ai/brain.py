@@ -44,6 +44,10 @@ class Brain:
         output = np.tanh(hidden @ self.weight2 + self.bias2)
         return float(output[0]), float(output[1])
 
+    def decide(self, inputs: list[float]) -> tuple[float, float]:
+        """Drive a car with this brain: (steer, throttle) for the car's inputs. Fits the Controller protocol."""
+        return self.forward(np.asarray(inputs))
+
     @staticmethod
     def genome_length() -> int:
         """Return how many numbers a genome has (every weight and bias)."""

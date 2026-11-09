@@ -46,6 +46,17 @@ class Car:
         if self.tick_counter >= config.CAR_TICK_COUNTER_KILL_THRESHOLD:
             self.alive = False
 
+    def inputs(self, walls: list[Segment]) -> list[float]:
+        """Return what the car's controller sees, every value between 0 and 1.
+
+        Args:
+            walls: The walls the sensors can see.
+
+        Returns:
+            The sensor readings (from the car's left to its right), followed by speed / max speed.
+        """
+        return self.sensor_readings(walls) + [self.speed / config.CAR_MAX_SPEED]
+
     def check_collision(self, walls: list[Segment]) -> None:
         """Check if the car collides with any walls and sets the alive flag accordingly.
 

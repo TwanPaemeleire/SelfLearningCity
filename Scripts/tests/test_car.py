@@ -323,3 +323,79 @@ def test_readings_stay_between_zero_and_one_on_the_oval():
     car = Car(track.start_pos, track.start_angle)
     for reading in car.sensor_readings(track.walls):
         assert 0.0 <= reading <= 1.0
+
+
+# --- Inputs: what the controller sees ---
+# The sensor readings, then speed / max speed. Everything is between 0 and 1.
+
+BOX = [wall(0, 0, 400, 0), wall(400, 0, 400, 200), wall(400, 200, 0, 200), wall(0, 200, 0, 0)]
+
+
+def assert_all_between_zero_and_one(inputs: list[float]) -> None:
+    for value in inputs:
+        assert 0.0 <= value <= 1.0, f"input {value} is outside 0..1 in {inputs}"
+
+
+def test_inputs_match_the_brain_input_count():
+    assert len(make_car().inputs([])) == config.BRAIN_INPUTS
+
+
+def test_inputs_are_one_sensor_per_ray_plus_speed():
+    assert len(make_car().inputs([])) == config.CAR_SENSOR_COUNT + 1
+
+
+def test_inputs_start_with_the_sensor_readings():
+    car = make_car()
+    walls = [wall(150, -1000, 150, 1000)]
+    assert car.inputs(walls)[:-1] == car.sensor_readings(walls)
+
+
+def test_parked_car_in_open_space():
+    # Sees nothing and isn't moving.
+    assert make_car().inputs([]) == [1.0] * config.CAR_SENSOR_COUNT + [0.0]
+
+
+def test_last_input_is_speed_divided_by_max_speed():
+    assert make_car(speed=MAX / 2).inputs([])[-1] == pytest.approx(0.5)
+
+
+def test_max_speed_gives_one():
+    assert make_car(speed=MAX).inputs([])[-1] == pytest.approx(1.0)
+
+
+def test_inputs_are_plain_floats():
+    for value in make_car(speed=MAX / 3).inputs(BOX):
+        assert isinstance(value, float)
+
+
+def test_inputs_between_zero_and_one_when_parked():
+    assert_all_between_zero_and_one(make_car().inputs(BOX))
+
+
+def test_inputs_between_zero_and_one_at_max_speed():
+    assert_all_between_zero_and_one(make_car(speed=MAX).inputs(BOX))
+
+
+def test_inputs_between_zero_and_one_right_next_to_a_wall():
+    car = make_car()
+    x = 100 + HALF_L + 1  # wall 1 px in front of the car
+    assert_all_between_zero_and_one(car.inputs([wall(x, -1000, x, 1000)]))
+
+
+def test_inputs_between_zero_and_one_everywhere_in_a_box():
+    # Many positions, angles and speeds inside the box.
+    for x in range(20, 400, 40):
+        for y in range(20, 200, 40):
+            for angle in (0.0, 1.0, 2.5, -2.0):
+                for speed in (0.0, MAX / 2, MAX):
+                    car = Car(Vec2(x, y), angle)
+                    car.speed = speed
+                    assert_all_between_zero_and_one(car.inputs(BOX))
+
+
+def test_inputs_stay_between_zero_and_one_while_driving():
+    # Full throttle, then full brake, checking every step.
+    car = make_car()
+    for throttle in [1.0] * 120 + [-1.0] * 120:
+        car.update(0.3, throttle, DT)
+        assert_all_between_zero_and_one(car.inputs(BOX))

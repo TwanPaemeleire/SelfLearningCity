@@ -16,6 +16,13 @@ CHECKPOINTS = [
 ]
 
 
+class FullThrottle:
+    """Test controller that always drives straight at full throttle."""
+
+    def decide(self, inputs: list[float]) -> tuple[float, float]:
+        return 0.0, 1.0
+
+
 def make_car() -> Car:
     return Car(Vec2(100, 100), 0.0)
 
@@ -130,9 +137,9 @@ def test_respawn_resets_progress():
 
 def test_world_step_tracks_checkpoints():
     track = Track(walls=[], checkpoints=CHECKPOINTS, start_pos=Vec2(100, 100), start_angle=0.0)
-    world = World(track)
+    world = World(track, [FullThrottle()])
     for _ in range(2 * 60):  # 2 seconds of full throttle
-        world.step(DT, [(0.0, 1.0)])
+        world.step(DT)
     assert world.cars[0].progress >= 1
 
 
