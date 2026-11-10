@@ -1,4 +1,7 @@
+import numpy as np
+
 import config
+from ai.brain import Brain
 from sim.geometry import Segment, Vec2
 from sim.track import Track
 from sim.world import World
@@ -156,3 +159,40 @@ def test_one_dead_car_does_not_stop_the_others():
     run(world, steps=5 * 60)
     assert not world.cars[0].alive
     assert world.cars[1].alive
+
+
+# --- Nearby walls: a cheap pre-check so cars only test walls they can reach ---
+
+
+def test_walls_near_includes_a_wall_in_sensor_range():
+    wall = Segment(Vec2(100 + config.CAR_SENSOR_LENGTH - 1, -1000), Vec2(100 + config.CAR_SENSOR_LENGTH - 1, 1000))
+    track = Track(walls=[wall], checkpoints=[], start_pos=Vec2(100, 100), start_angle=0.0)
+    world = World(track, [no_input()])
+    assert world.walls_near(Vec2(100, 100)) == [wall]
+
+
+def test_walls_near_skips_a_wall_far_away():
+    far = Segment(Vec2(5000, 5000), Vec2(5100, 5000))
+    track = Track(walls=[far], checkpoints=[], start_pos=Vec2(100, 100), start_angle=0.0)
+    world = World(track, [no_input()])
+    assert world.walls_near(Vec2(100, 100)) == []
+
+
+def test_walls_near_uses_the_whole_wall_not_just_its_ends():
+    # A long wall whose ends are far away, but whose middle passes right by the car.
+    long_wall = Segment(Vec2(-5000, 150), Vec2(5000, 150))
+    track = Track(walls=[long_wall], checkpoints=[], start_pos=Vec2(100, 100), start_angle=0.0)
+    world = World(track, [no_input()])
+    assert world.walls_near(Vec2(100, 100)) == [long_wall]
+
+
+def test_nearby_walls_give_the_same_inputs_as_all_walls_on_the_circuit():
+    # Drive random brains around the real circuit; at every step the shortcut must match checking every wall.
+    track = Track.load(config.DATA_DIR / "tracks" / "circuit.json")
+    rng = np.random.default_rng(3)
+    world = World(track, [Brain.random(rng) for _ in range(10)])
+    for _ in range(120):
+        for car in world.cars:
+            if car.alive:
+                assert car.inputs(world.walls_near(car.position)) == car.inputs(track.walls)
+        world.step(DT)
